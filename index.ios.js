@@ -11,7 +11,10 @@ var {
 var StopWatch = React.createClass({
   getInitialState: function() {
     return {
-      timeElapsed: null
+      timeElapsed: null,
+      running: false,
+      startTime:null,
+      laps:[]
     }
   },
 
@@ -30,36 +33,67 @@ var StopWatch = React.createClass({
       </View>
       
       <View style={[styles.footer, this.border('blue')]}>  
-        <Text>
-          I am a list of Laps
-        </Text>
+        {this.laps()}
       </View>
     </View>
   },
+  laps: function() {
+    return this.state.laps.map(function(time,index){
+      return <View key={index} style={styles.lap}>
+        <Text key={index} style={styles.lapText}>
+        Lap #{index+1}
+        </Text>
+        <Text style={styles.lapText}>
+          {formatTime(time)}
+        </Text>
+      </View>
+    });
+  },
   startStopButton:function(){
+    var style = this.state.running ? styles.stopButton : styles.startButton;
     return <TouchableHighlight 
     underlayColor="gray"
     onPress={this.handleStartPress}
-    style={[styles.button,styles.startButton]}
+    style={[styles.button,style]}
     >
       <Text>
-        Start
+        {this.state.running ? 'Stop' : 'Start'}
       </Text>
     </TouchableHighlight>
   },
+  handleLapPress:function() {
+    var lap = this.state.timeElapsed;
+    this.setState({
+      startTime: new Date(),
+      //注意这里用concat而不用push是因为，我们不然改变原来的lap的状态
+      //而希望返回一个全新的数组
+      laps:this.state.laps.concat([lap])
+    })
+  },
   lapButton:function() {
-    return <View style={styles.button}>
+    return <TouchableHighlight 
+    style={styles.button}
+    underlayColor="gray"
+    onPress={this.handleLapPress}
+    >
       <Text>
         Lap
       </Text>
-    </View>
+    </TouchableHighlight>
   },
-  handleStartPress: function() {    
+  handleStartPress: function() {  
+    if (this.state.running) {
+      clearInterval(this.interval); 
+      this.setState({running: false});
+      return;
+    } 
+    
     var startTime = new Date();
-
-    setInterval(() => {
+    this.setState({startTime: new Date()});
+    this.interval = setInterval(() => {
       this.setState({
-        timeElapsed : new Date()-startTime
+        running: true,
+        timeElapsed : new Date()-this.state.startTime
       });
     }, 30);
   },
@@ -106,6 +140,16 @@ var styles = StyleSheet.create({
   },
   startButton:{
     borderColor:'#00CC00'
+  },
+  stopButton:{
+    borderColor:'#CC0000'
+  },
+  lap:{
+    justifyContent:'space-around',
+    flexDirection:'row'
+  },
+  lapText:{
+    fontSize: 30
   }
 });
 
